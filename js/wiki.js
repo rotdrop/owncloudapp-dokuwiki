@@ -22,7 +22,7 @@
 // We need Files, but not for the settings stuff.
 var Files = Files || {};
 
-Wiki={
+Wiki = {
 	wiki: 'wiki',
 	dokuwikiurl: 'http://localhost/dokuwiki',
 	dokuwikidetail: '/lib/exe/detail.php',
@@ -38,25 +38,24 @@ Wiki={
 	img: true,
 	filenamecache: {},
 	cleanfilenames: {},
-	
-	// original from apps/files/js/files.js
+	oldFileNameValid: function (name) { return false; },
+        oldCheckName: function (modName, newName, isNewFile) { return false },
+
+	// we call the old control function from Files and then add additional test.
 	isFileNameValid:function (name) {
+                if (!oldFileNameValid(name)) {
+                        return false;
+                }
+
 		//save ajax calls
 		if(name in Wiki.filenamecache && Wiki.filenamecache[name] != undefined)  return Wiki.filenamecache[name];
-		if(name === '.') {
-			OC.Notification.show(t('files', '\'.\' is an invalid file name.'));
-			return false;
-		}
-		if(name.length == 0) {
-			OC.Notification.show(t('files', 'File name cannot be empty.'));
-			return false;
-		}
+
 		if(name.toLowerCase() != name){
-			OC.Notification.show(t('dokuwiki', 'The file or folder name must be lowercase'));
+			OC.Notification.show(t('dokuwiki', 'The file or folder name must be lowercase in the wiki/ folder'));
 			return false;
 		}
-		// check for invalid characters
-		var invalid_characters = ['\\', '/', '<', '>', ':', '"', '|', '?', '*',')','(',']','[','{','}','&','%','$','§','+','!',' '];
+		// check for additonal invalid characters
+		var invalid_characters = [/*'\\', '/', '<', '>', ':', '"', '|', '?', '*', */ ')','(',']','[','{','}','&','%','$','§','+','!',' '];
 		for (var i = 0; i < invalid_characters.length; i++) {
 			if (name.indexOf(invalid_characters[i]) != -1) {
 				OC.Notification.show(t('dokuwiki', "Invalid name, \\, /, <, >, :, \", |, ?, *, ), (, ], [, {, }, &, %, $, §, +, ! and spaces are not allowed."));
@@ -801,28 +800,13 @@ Wiki={
 	},
 	checkName:function(modName, newName, isNewFile) {
 		if (isNewFile || $('tr').filterAttr('data-file', newName).length > 0) {
-			var html;
 			//renamedFilename = Wiki.sanitizeFilename(newName);
 			if( Wiki.sanitizeFilename(newName)!=newName){
 					OC.dialogs.alert(t('dokuwiki', '{new_name} is not a valid filename. Please rename it and try again.', {new_name: escapeHTML(newName)}), t('dokuwiki','Error uploading file'));
 					//html = t('dokuwiki', '{new_name} is not a valid filename. Please rename it and try again.', {new_name: escapeHTML(newName)});	
-			}else{
-				if(isNewFile){
-					html = t('files', '{new_name} already exists', {new_name: escapeHTML(newName)})+'<span class="replace">'+t('files', 'replace')+'</span><span class="suggest">'+t('files', 'suggest name')+'</span>&nbsp;<span class="cancel">'+t('files', 'cancel')+'</span>';
-				}else{
-					html = t('files', '{new_name} already exists', {new_name: escapeHTML(newName)})+'<span class="replace">'+t('files', 'replace')+'</span><span class="cancel">'+t('files', 'cancel')+'</span>';
-				}
-			
-			html = $('<span>' + html + '</span>');
-			html.attr('data-oldName', modName);
-			html.attr('data-newName', newName);
-			html.attr('data-isNewFile', isNewFile);
-            OC.Notification.showHtml(html);
 			}
-			return true;
-		} else {
-			return false;
-		}
+                }
+                return Wiki.oldCheckName(modName, newName, isNewFile);
 	},
 	getAppConfig: function(){
 		$.ajax({
@@ -1038,7 +1022,10 @@ $(document).ready(function(){
 	// overwrite Files.isFileNameValid
 	$(window).load(function(){
 		if($('#dir').length != 0 && $('#dir').val().substr(0, 5) == '/'+Wiki.wiki){
+                        Wiki.oldFileNameValid = Files.isFileNameValid;
 		        Files.isFileNameValid = function(name){return Wiki.isFileNameValid(name)};
+
+                        Wiki.oldCheckName = FileList.checkName;
 		        FileList.checkName = function(oldName, newName, isNewFile){return Wiki.checkName(oldName, newName, isNewFile)};
                 }
 		$('#notification:first-child').on('click', '.cancel', function() {
