@@ -288,35 +288,88 @@ Wiki = {
 		
 	},
 	versionspopup: function(file){
+                var popup = $('#wikiversions');
+                if (popup.length > 0) {
+                        popup.dialog('close');
+                        popup.dialog('destroy').remove();
+                        popup.remove();
+                }
 		$.ajax({url: OC.filePath('dokuwiki', 'ajax', 'wikiVersions.php'), async: false, data: {file: file, id: Wiki.getFileID(file)/*encodeURIComponent(file).replace( /%2F/g, ':' )*/}, success: function(result) {
-			authorpopup = jQuery(document.createElement('div'))
-						.attr('id', 'wikiversions')
-						.dialog({ width: 280, height: 200,modal: false,
-						draggable: true, title: t('dokuwiki', 'Versions'),
-						resizable: true});	
-			authorpopup.append('<p><b>'+t('dokuwiki','File')+': '+file+'</b></p><hr/><div>'+t('dokuwiki',result.data.message)+'</div>');
-			}});
+                        popup = jQuery(document.createElement('div'))
+                                .attr('id', 'wikiversions')
+                                .dialog({ width: 280,
+                                          height: 'auto',
+                                          modal: false,
+					  draggable: true,
+                                          title: t('dokuwiki', 'Versions'),
+					  resizable: true,
+                                          // close: function(event, ui) {
+                                          //         $('#wikiversions').dialog('close');
+                                          //         $('#wikiversions').dialog('destroy').remove();
+                                          // }
+                                        });	
+			popup.append('<p><b>'+t('dokuwiki','File')+': '+file+'</b></p><hr/><div>'+t('dokuwiki',result.data.message)+'</div>');
+                        $('a.wikiversion').click(function (event) {
+                                if ($('#wikiversionshow').length > 0) {
+                                        $('#wikiversionshow').dialog('close');
+                                        $('#wikiversionshow').dialog('destroy').remove();
+                                        $('#wikiversionshow').remove();
+                                }
+                                event.preventDefault();
+                                var versionURL = $(this).attr('href');
+                                popup = jQuery(document.createElement('div'))
+                                        .attr('id', 'wikiversionshow');
+                                popup.append('<iframe id="wikiversionshowframe" src="'+versionURL+'" height="100%" width="100%"></iframe>');
+                                popup.dialog({ width: 'auto',
+                                               height: 'auto',
+                                               modal: false,
+                                               draggable: true,
+                                               title: t('dokuwiki', file),
+                                               close: function(event, ui) {
+                                                       $('#wikiversionshowframe').remove();
+                                                       $('#wikiversionshow').dialog('close');
+                                                       $('#wikiversionshow').dialog('destroy').remove();
+                                               }
+                                             });
+                                $('#wikiversionshowframe').load(function () {
+                                        popup.height($(this).contents().height());
+                                        popup.width($(this).contents().width());
+                                });
+                        });
+		}});
 	},	
 	authorpopup: function(file){
+                var popup = $('#fileauthors');
+                if (popup.length > 0) {
+                        popup.dialog('close');
+                        popup.dialog('destroy').remove();
+                        popup.remove();
+                }
 		$.ajax({url: OC.filePath('dokuwiki', 'ajax', 'authors.php'), async: false, data: {id: /*Wiki.getFileID(file)*/encodeURIComponent(file).replace( /%2F/g, ':' )}, success: function(result) {
-			authorpopup = jQuery(document.createElement('div'))
-						.attr('id', 'fileauthors')
-						.dialog({ width: 280, height: 200,modal: false,
-						draggable: true, title: t('dokuwiki', 'Authors'),
-						resizable: true});	
-			authorpopup.append('<p><b>'+t('dokuwiki','File')+': '+file+'</b></p><hr/><div>'+t('dokuwiki',result.data.message)+'</div>');
-			}});
+			popup = jQuery(document.createElement('div'))
+				.attr('id', 'fileauthors')
+				.dialog({ width: 280, height: 200,modal: false,
+					  draggable: true, title: t('dokuwiki', 'Authors'),
+					  resizable: true});	
+			popup.append('<p><b>'+t('dokuwiki','File')+': '+file+'</b></p><hr/><div>'+t('dokuwiki',result.data.message)+'</div>');
+		}});
 	},
 	
 	usedinpopup: function(file){
+                var popup = $('#fileusedin');
+                if (popup.length > 0) {
+                        popup.dialog('close');
+                        popup.dialog('destroy').remove();
+                        popup.remove();
+                }
 		$.ajax({url: OC.filePath('dokuwiki', 'ajax', 'mediaUse.php'), async: false, data: {file: Wiki.wiki +'/'+file}, success: function(result) {
-			usedinpopup = jQuery(document.createElement('div'))
+			popup = jQuery(document.createElement('div'))
 				.attr('id', 'fileusedin')
 				.dialog({ width: 280, height: 200,modal: false,
-				draggable: true, title: t('dokuwiki', 'Usage on ...'),
-				resizable: true});
-			usedinpopup.append('<p><b>'+t('dokuwiki','File')+': '+file+'</b></p><hr/><div>'+t('dokuwiki',result.data.message)+'</div>');
-			}});
+				          draggable: true, title: t('dokuwiki', 'Usage on ...'),
+				          resizable: true});
+			popup.append('<p><b>'+t('dokuwiki','File')+': '+file+'</b></p><hr/><div>'+t('dokuwiki',result.data.message)+'</div>');
+		}});
 	},
 	
 	gotoPage: function(url){

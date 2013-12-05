@@ -34,7 +34,7 @@ if(!isset($_GET['file'])){
 }else{	
         $dwEmbedName = "dokuwikiembed";
 
-        if (\OC_App::isEnabled($dwEmbedName)) {
+        if (false && \OC_App::isEnabled($dwEmbedName)) {
                 /* If the app is enabled, we set the "faked" config-setting to the
                  * proper URL, otherwise to "disabled"
                  */
@@ -66,15 +66,16 @@ if(!isset($_GET['file'])){
 				$line = explode("\t", $meta[$i]);
 				$date = strftime('%Y/%m/%d %H:%M',$line[0]);
 				if(empty($line[4])) $line[4] = $line[1];
-                                $rowReq = '?media='.$wikiid.'&rev='.$line[0];
+                                $rawRowReq = '?media='.$wikiid.'&rev='.$line[0];
                                 if ($embed) {
-                                        $rowReq = urlencode($fetch.$rowReq);
+                                        $rowReq = urlencode($fetch.$rawRowReq);
                                         $target = "_self";
                                 } else {
-                                        $rowReq = $fetch.$rowReq;
+                                        $rowReq = $fetch.$rawRowReq;
                                         $target = "DokuWiki";
                                 }
-				if($line[2] != DOKU_CHANGE_TYPE_MOVE) $ret .= '<li><a title="'.$line[5].'" href="'.$dwURL.$rowReq.'" target="'.$target.'"><b>'.htmlspecialchars($date).'</b>'.htmlspecialchars(' ('.$line[4].')').'</a></li>';
+				if(empty($line[5])) $line[5] = htmlspecialchars($dwURL.$fetch.$rawRowReq);
+				if($line[2] != DOKU_CHANGE_TYPE_MOVE) $ret .= '<li><a class="wikiversion" title="'.$line[5].'" href="'.$dwURL.$rowReq.'" target="'.$target.'"><b>'.htmlspecialchars($date).'</b>'.htmlspecialchars(' ('.$line[4].')').'</a></li>';
 			}
 			$ret .= '</ul>';
 			OCP\JSON::success(array("data" => array( "message" => $ret)));
