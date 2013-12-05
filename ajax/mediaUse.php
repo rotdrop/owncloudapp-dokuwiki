@@ -25,9 +25,23 @@ OCP\JSON::callCheck();
 if(!isset($_GET['file'])){
 	OCP\JSON::error(array("data" => array( "message" => "No file given")));	
 }else{	
+        $dwEmbedName = "dokuwikiembed";
+
+        if (\OC_App::isEnabled($dwEmbedName)) {
+                /* If the app is enabled, we set the "faked" config-setting to the
+                 * proper URL, otherwise to "disabled"
+                 */
+                $dwURL = \OCP\Util::linkTo($dwEmbedName, "index.php")."?wikiPath=";
+                $embed = true;
+        } else {
+                $dwURL = \OC_Appconfig::getValue('dokuwiki', 'dokuwikiurl', 'http://www.exampl.org/dokuwiki');
+                $embed = false;
+        }
+
 	$uid = \OCP\User::getUser();
 	\OC\Files\Filesystem::init($uid,'/'.$uid .'/files');
 	$data = \OC\Files\Filesystem::getFileInfo($_GET['file']);
+        trigger_error(print_r($data, true), E_USER_NOTICE);
 	$db = \OC_DB::prepare('SELECT `firstheading`,`wikipage` FROM `*PREFIX*dokuwiki_media_use` JOIN `*PREFIX*filecache` USING (fileid) WHERE fileid = ?');
 	if($data['fileid']>0){
 		$res = $db->execute(array($data['fileid']));
@@ -35,12 +49,20 @@ if(!isset($_GET['file'])){
 		if($rows > 0){
 			$ret = '<ul>';
 			// TODO rewrite
-			$url = \OC_Appconfig::getValue('dokuwiki', 'dokuwikiurl', 'http://www.exampl.org/dokuwiki').'/doku.php?id=';
+                        $req = '/doku.php?id=';
 			for($i = 1; $i <= $rows; $i++){
-						$row = $res ->fetchRow();
-						$title = ($row['firstheading']!='')?$row['firstheading'].' ('.$row['wikipage'].')':$row['wikipage'];
-						$ret .= '<li><span class="curid"><a href="'.$url.$row['wikipage'].'" title="'.$title.'" target="_blank">'.$title.'</a></span></li>';
-				}
+                                $row = $res ->fetchRow();
+
+                                $title = ($row['firstheading']!='')?$row['firstheading'].' ('.$row['wikipage'].')':$row['wikipage'];
+                                $rowReq = $req.$row['wikipage'];
+                                if ($embed) {
+                                        $rowReq = urlencode($rowReq);
+                                        $target = "_self";
+                                } else {
+                                        $target = "DokuWiki";
+                                }
+                                $ret .= '<li><span class="curid"><a href="'.$dwURL.$rowReq.'" title="'.$title.'" target="'.$target.'">'.$title.'</a></span></li>';
+                        }
 			$ret .= '</ul>';
 			OCP\JSON::success(array("data" => array("message" => $ret)));
 		}else{

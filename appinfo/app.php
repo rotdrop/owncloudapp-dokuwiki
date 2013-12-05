@@ -4,6 +4,7 @@ OC::$CLASSPATH['OCA\DokuWiki\Storage'] = 'dokuwiki/lib/wiki-versions.php';
 OC::$CLASSPATH['OCA\DokuWiki\Hooks'] = 'dokuwiki/lib/hooks.php';
 OC::$CLASSPATH['OCA\DokuWiki\Capabilities'] = 'dokuwiki/lib/capabilities.php';
 
+OCP\Util::addstyle('dokuwiki', 'style');
 OCP\Util::addscript('dokuwiki', 'wiki');
 
 // Settings

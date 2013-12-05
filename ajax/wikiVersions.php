@@ -32,8 +32,20 @@ OCP\JSON::callCheck();
 if(!isset($_GET['file'])){
 	OCP\JSON::error(array("data" => array( "message" => "No Filename given." )));
 }else{	
-	$url = OC_Appconfig::getValue('dokuwiki', 'dokuwikiurl', 'http://localhost/wax');
-	$fetch = "$url/lib/exe/fetch.php";
+        $dwEmbedName = "dokuwikiembed";
+
+        if (\OC_App::isEnabled($dwEmbedName)) {
+                /* If the app is enabled, we set the "faked" config-setting to the
+                 * proper URL, otherwise to "disabled"
+                 */
+                $dwURL = \OCP\Util::linkTo($dwEmbedName, "index.php")."?wikiPath=";
+                $embed = true;
+        } else {
+                $dwURL = \OC_Appconfig::getValue('dokuwiki', 'dokuwikiurl', 'http://www.exampl.org/dokuwiki');
+                $embed = false;
+        }
+
+	$fetch = "/lib/exe/fetch.php";
 	$file = $_GET['file'];
 	$file = str_replace(':','/',$file);
 	require_once('dokuwiki/lib/utils.php');
@@ -54,7 +66,15 @@ if(!isset($_GET['file'])){
 				$line = explode("\t", $meta[$i]);
 				$date = strftime('%Y/%m/%d %H:%M',$line[0]);
 				if(empty($line[4])) $line[4] = $line[1];
-				if($line[2] != DOKU_CHANGE_TYPE_MOVE) $ret .= '<li><a title="'.$line[5].'" href="'.$fetch.'?media='.$wikiid.'&rev='.$line[0].'" target="_blank"><b>'.htmlspecialchars($date).'</b>'.htmlspecialchars(' ('.$line[4].')').'</a></li>';
+                                $rowReq = '?media='.$wikiid.'&rev='.$line[0];
+                                if ($embed) {
+                                        $rowReq = urlencode($fetch.$rowReq);
+                                        $target = "_self";
+                                } else {
+                                        $rowReq = $fetch.$rowReq;
+                                        $target = "DokuWiki";
+                                }
+				if($line[2] != DOKU_CHANGE_TYPE_MOVE) $ret .= '<li><a title="'.$line[5].'" href="'.$dwURL.$rowReq.'" target="'.$target.'"><b>'.htmlspecialchars($date).'</b>'.htmlspecialchars(' ('.$line[4].')').'</a></li>';
 			}
 			$ret .= '</ul>';
 			OCP\JSON::success(array("data" => array( "message" => $ret)));

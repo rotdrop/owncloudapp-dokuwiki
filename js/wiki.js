@@ -19,7 +19,8 @@
 * 
 */
 
-// We need Files, but not for the settings stuff.
+// We need Files, but not for the settings stuff. But it needs to be
+// defined.
 var Files = Files || {};
 
 Wiki = {
@@ -27,6 +28,7 @@ Wiki = {
 	dokuwikiurl: 'http://localhost/dokuwiki',
 	dokuwikidetail: '/lib/exe/detail.php',
 	dokuwikibase: '/var/www/dokuwikitest',
+        dokuwikiembed: 'disabled', // set to URL inside OC if embedding app is enabled
 	dokuwikideaccent: '0',
 	dokuwikisepchar: "_",
 	//From DokuWiki
@@ -43,7 +45,7 @@ Wiki = {
 
 	// we call the old control function from Files and then add additional test.
 	isFileNameValid:function (name) {
-                if (!oldFileNameValid(name)) {
+                if (!Wiki.oldFileNameValid(name)) {
                         return false;
                 }
 
@@ -201,6 +203,15 @@ Wiki = {
         
         Wiki.$popup.dialog('open');
 	},
+
+        makeDokuWikiURL: function(dwPath) {
+                var dwURL = Wiki.dokuwikiurl;
+                if (Wiki.dokuwikiembed && Wiki.dokuwikiembed != 'disabled') {
+                        dwURL = Wiki.dokuwikiembed;
+                        dwPath = '?wikiPath='+Wiki.urlencode(dwPath);
+                }
+                return dwURL + dwPath;
+        },
 	
 	createWikiDropdown: function(filename, file, dir){
 		// Check if it is a directory.
@@ -212,10 +223,10 @@ Wiki = {
 		// Todo check rewrite
 		file = file.substring(Wiki.wiki.length+1);
 		var wikiid = file.replace( /\//g, ':' ).replace( /%2F/g, ':' );
-		var detailurl = Wiki.dokuwikiurl + Wiki.dokuwikidetail + '?media=' + wikiid;
+		var detailurl = Wiki.makeDokuWikiURL(Wiki.dokuwikidetail + '?media=' + wikiid);
 		
 		//http://localhost/wax/doku.php?id=start&ns=neuer&image=neuer%3Aausgabe.pdf&do=media
-		var mmurl = Wiki.dokuwikiurl + '/doku.php' + '?ns=' + encodeURIComponent(dir).replace( /\//g, ':' ).replace( /%2F/g, ':' ).substring(Wiki.wiki.length+1)+'&image='+ wikiid + '&do=media&tab_details=history';
+	        var mmurl = Wiki.makeDokuWikiURL('/doku.php' + '?ns=' + encodeURIComponent(dir).replace( /\//g, ':' ).replace( /%2F/g, ':' ).substring(Wiki.wiki.length+1)+'&image='+ wikiid + '&do=media&tab_details=history');
 		var html = '<div id="dropdown" class="drop drop-wiki" data-file="'+escapeHTML(file)+'">';
 		html += '<div id="private" style="margin-bottom: 5px;">';
 		html += '<button name="makelink" id="dokuwikidetail"> <img src="'+OC.imagePath('core','actions/search')+'" style="vertical-align:middle"> '+t('dokuwiki', 'Details')+'</button>';
@@ -309,8 +320,12 @@ Wiki = {
 	},
 	
 	gotoPage: function(url){
-		window.open(url);
-		//window.location.assign(url);
+                if (Wiki.dokuwikiembed) {
+		        //window.location.assign(url);
+		        window.open(url, '_self');
+                } else {
+		        window.open(url, 'DokuWiki');
+                }
 	},
 	
 	getFileID: function(filename){
@@ -814,6 +829,7 @@ Wiki = {
 			async: false,
 			success: function(config) {
 				if(config.status == 'success') {
+                                        if('embeddeddokuwiki' in config.data) Wiki.dokuwikiembed = config.data['embeddeddokuwiki'];
 					if('dokuwikibase' in config.data) Wiki.dokuwikibase = config.data['dokuwikibase'];
 					if('dokuwikiurl' in config.data) Wiki.dokuwikiurl = config.data['dokuwikiurl'];
 					if('dokuwikideaccent' in config.data) Wiki.dokuwikideaccent = config.data['dokuwikideaccent'];
@@ -821,7 +837,39 @@ Wiki = {
 				}
 			}
 		});
-	}
+	},
+        urlencode: function(str) {
+                // http://kevin.vanzonneveld.net
+                // + original by: Philip Peterson
+                // + improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+                // + input by: AJ
+                // + improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+                // + improved by: Brett Zamir (http://brett-zamir.me)
+                // + bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+                // + input by: travc
+                // + input by: Brett Zamir (http://brett-zamir.me)
+                // + bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+                // + improved by: Lars Fischer
+                // + input by: Ratheous
+                // + reimplemented by: Brett Zamir (http://brett-zamir.me)
+                // + bugfixed by: Joris
+                // + reimplemented by: Brett Zamir (http://brett-zamir.me)
+                // % note 1: This reflects PHP 5.3/6.0+ behavior
+                // % note 2: Please be aware that this function expects to encode into UTF-8 encoded strings, as found on
+                // % note 2: pages served as UTF-8
+                // * example 1: urlencode('Kevin van Zonneveld!');
+                // * returns 1: 'Kevin+van+Zonneveld%21'
+                // * example 2: urlencode('http://kevin.vanzonneveld.net/');
+                // * returns 2: 'http%3A%2F%2Fkevin.vanzonneveld.net%2F'
+                // * example 3: urlencode('http://www.google.nl/search?q=php.js&ie=utf-8&oe=utf-8&aq=t&rls=com.ubuntu:en-US:unofficial&client=firefox-a');
+                // * returns 3: 'http%3A%2F%2Fwww.google.nl%2Fsearch%3Fq%3Dphp.js%26ie%3Dutf-8%26oe%3Dutf-8%26aq%3Dt%26rls%3Dcom.ubuntu%3Aen-US%3Aunofficial%26client%3Dfirefox-a'
+                str = (str + '').toString();
+
+                // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
+                // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
+                return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').
+                        replace(/\)/g, '%29').replace(/\*/g, '%2A').replace(/%20/g, '+');
+        }
 }
 // Set configvalues
 /*OC.AppConfig.getCall('getValue',{app:'dokuwiki',key:'dokuwikibase',defaultValue:'wiki'},function(q){Wiki.dokuwikibase = q;});
@@ -961,7 +1009,7 @@ $(document).ready(function(){
 						dir = dir.substring(Wiki.wiki.length+1);
 						var file = dir+'/'+filename;
 						var wikiid = file.replace( /\//g, ':' ).replace( /%2F/g, ':' );
-						var mmurl = Wiki.dokuwikiurl + '/doku.php' + '?ns=' + encodeURIComponent(dir).replace( /\//g, ':' ).replace( /%2F/g, ':' )+'&image='+ wikiid + '&do=media';
+						var mmurl = Wiki.makeDokuWikiURL('/doku.php' + '?ns=' + encodeURIComponent(dir).replace( /\//g, ':' ).replace( /%2F/g, ':' )+'&image='+ wikiid + '&do=media');
 						Wiki.gotoPage(mmurl);
 					}else{// From  apps/files/js/files.js
 						if (Files.cancelUpload(filename)) {

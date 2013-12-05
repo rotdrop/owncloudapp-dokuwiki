@@ -14,3 +14,7 @@
 .failure {
 	color: red;
 }
+
+div.drop-wiki {
+	width:23em !important;
+}
