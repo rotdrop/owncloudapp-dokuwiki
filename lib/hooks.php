@@ -44,9 +44,11 @@ class Hooks {
 		// Do we've a valid filename (no spaces, etc.)
 		$filename = basename($path);
 		$specialFile = allowedFilenameIfNotCleandID($filename);
-		if(!$specialFile  && cleanID($filename) != $filename){
+		if(!$specialFile && cleanID($filename) != $filename){
                         $params['run'] = false;
-		}
+		} else {
+                  Storage::store($path);
+                }
 	}	
 	
 	public static function post_write_hook($params) {
