@@ -82,7 +82,8 @@ class Hooks {
 			\OC\Files\Filesystem::rename($path, $newname);
 		}else{		
                         Storage::addMediaMetaEntry(0,'','', \OCP\User::getUser(),$path);
-		}		
+		}
+                Storage::deleteOwnCloudVersions($path);
         }
 	
 	
@@ -157,7 +158,10 @@ class Hooks {
                 if (!inWiki($newpath)) {
                         return;
                 }
-                Storage::rename($oldpath,$newpath,true);
+                Storage::rename($oldpath, $newpath, true);
+
+                Storage::deleteOwnCloudVersions($oldpath);
+                Storage::deleteOwnCloudVersions($newpath);
 	}
 
 }
