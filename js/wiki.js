@@ -956,7 +956,7 @@ $(document).ready(function(){
 	}
 	
 	
-	if (typeof FileActions !== 'undefined') {
+        if (typeof FileActions !== 'undefined' && $('#dir').length > 0) {
 		// Add versions button to 'files/index.php', but only outside the wiki-folder.
 		if($('#dir').val().substr(0, 5) == '/'+Wiki.wiki){
                         FileActions.actions['file'][t('files_versions', 'Versions')] = false;
