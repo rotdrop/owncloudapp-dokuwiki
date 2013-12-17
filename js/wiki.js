@@ -42,6 +42,7 @@ Wiki = {
 	cleanfilenames: {},
 	oldFileNameValid: function (name) { return false; },
         oldCheckName: function (modName, newName, isNewFile) { return false },
+        oldFileActions: false,
 
 	// we call the old control function from Files and then add additional test.
 	isFileNameValid:function (name) {
@@ -955,10 +956,27 @@ $(document).ready(function(){
 			return Wiki.getUniqueName(Wiki.sanitizeFilename(newname));
 	}
 	
+        $('#fileList').on('changeDirectory', function (evt) {
+                var targetDir  = evt.dir;
+                var currentDir = evt.previousDir;
+                var toWiki     = targetDir.substr(0, 5) == '/'+Wiki.wiki;
+                var fromWiki   = currentDir.substr(0, 5) == '/'+Wiki.wiki;
+
+                if (fromWiki == toWiki) {
+                        return;
+                }
 	
-        if (typeof FileActions !== 'undefined' && $('#dir').length > 0) {
-		// Add versions button to 'files/index.php', but only outside the wiki-folder.
-		if($('#dir').val().substr(0, 5) == '/'+Wiki.wiki){
+                if (toWiki && !Wiki.oldFileActions) {
+                        Wiki.oldFileActions = {};
+                        $.extend(true, Wiki.oldFileActions, FileActions.actions);
+                } else if (fromWiki && Wiki.oldFileActions) {
+                        FileActions.actions = Wiki.oldFileActions;
+                        Wiki.oldFileActions = false;
+                }
+
+                if (toWiki) {
+
+		        // Remove versions button from 'files/index.php' inside the wiki-folder.
                         FileActions.actions['file'][t('files_versions', 'Versions')] = false;
                         //FileActions.icons[t('files_versions', 'Versions')] = null;
 			FileActions.register(
@@ -1050,89 +1068,92 @@ $(document).ready(function(){
 			);
 			// Overwrite Delete-action from files-app
 			FileActions.register('file', 'Delete',
-				OC.PERMISSION_DELETE,
-				function () {
-					return OC.imagePath('core', 'actions/delete');
-				}, 
-				function (filename) {
-					var pat = /.* \(\d\)\..*$/g;
-					if(!pat.test(filename)){
-						OC.Notification.show(t('dokuwiki', 'The file is opened in the Mediamanager. If you have sufficient rights, you can delete them or restore an older version.'));
-						var dir = $('#dir').val();
-						dir = dir.substring(Wiki.wiki.length+1);
-						var file = dir+'/'+filename;
-						var wikiid = file.replace( /\//g, ':' ).replace( /%2F/g, ':' );
-						var mmurl = Wiki.makeDokuWikiURL('/doku.php' + '?ns=' + encodeURIComponent(dir).replace( /\//g, ':' ).replace( /%2F/g, ':' )+'&image='+ wikiid + '&do=media');
-						Wiki.gotoPage(mmurl);
-					}else{// From  apps/files/js/files.js
-						if (Files.cancelUpload(filename)) {
-							if (filename.substr) {
-								filename = [filename];
-							}
-							$.each(filename, function (index, file) {
-								var filename = $('tr').filterAttr('data-file', file);
-								filename.hide();
-								filename.find('input[type="checkbox"]').removeAttr('checked');
-								filename.removeClass('selected');
-							});
-							procesSelection();
-						} else {
-							FileList.do_delete(filename);
-						}
-						$('.tipsy').remove();
-					}
-				}
-			);
+				             OC.PERMISSION_DELETE,
+				             function () {
+					             return OC.imagePath('core', 'actions/delete');
+				             }, 
+				             function (filename) {
+					             var pat = /.* \(\d\)\..*$/g;
+					             if(!pat.test(filename)){
+						             OC.Notification.show(t('dokuwiki', 'The file is opened in the Mediamanager. If you have sufficient rights, you can delete them or restore an older version.'));
+						             var dir = $('#dir').val();
+						             dir = dir.substring(Wiki.wiki.length+1);
+						             var file = dir+'/'+filename;
+						             var wikiid = file.replace( /\//g, ':' ).replace( /%2F/g, ':' );
+						             var mmurl = Wiki.makeDokuWikiURL('/doku.php' + '?ns=' + encodeURIComponent(dir).replace( /\//g, ':' ).replace( /%2F/g, ':' )+'&image='+ wikiid + '&do=media');
+						             Wiki.gotoPage(mmurl);
+					             }else{// From  apps/files/js/files.js
+						             if (Files.cancelUpload(filename)) {
+							             if (filename.substr) {
+								             filename = [filename];
+							             }
+							             $.each(filename, function (index, file) {
+								             var filename = $('tr').filterAttr('data-file', file);
+								             filename.hide();
+								             filename.find('input[type="checkbox"]').removeAttr('checked');
+								             filename.removeClass('selected');
+							             });
+							             procesSelection();
+						             } else {
+							             FileList.do_delete(filename);
+						             }
+						             $('.tipsy').remove();
+					             }
+				             }
+			                    );
 			FileActions.register('dir', 'Delete',
-				OC.PERMISSION_DELETE,
-				function () {
-					return OC.imagePath('core', 'actions/delete');
-				}, 
-				function (dir) {
-					//From FileList.do_delete, only delete empty folders.
-					if (FileList.lastAction) {
-						FileList.lastAction();
-					}
-					$.post(OC.filePath('dokuwiki', 'ajax', 'delete.php'),
-							{dir:$('#dir').val()+'/'+dir},
-							function(result){
-								if (result.status == 'success') {
-									var files = $('tr').filterAttr('data-file',dir);
-									files.remove();
-									files.find('input[type="checkbox"]').removeAttr('checked');
-									files.removeClass('selected');
-								} else {
-									OC.dialogs.alert(t('dokuwiki', 'The folder can be deleted only if all files inside and subfolders have been deleted.'), t('dokuwiki', 'Delete folder'));
-								}
-					});
-					
-				}
-			);
+				             OC.PERMISSION_DELETE,
+				             function () {
+					             return OC.imagePath('core', 'actions/delete');
+				             }, 
+				             function (dir) {
+					             //From FileList.do_delete, only delete empty folders.
+					             if (FileList.lastAction) {
+						             FileList.lastAction();
+					             }
+					             $.post(OC.filePath('dokuwiki', 'ajax', 'delete.php'),
+							    {dir:$('#dir').val()+'/'+dir},
+							    function(result){
+								    if (result.status == 'success') {
+									    var files = $('tr').filterAttr('data-file',dir);
+									    files.remove();
+									    files.find('input[type="checkbox"]').removeAttr('checked');
+									    files.removeClass('selected');
+								    } else {
+									    OC.dialogs.alert(t('dokuwiki', 'The folder can be deleted only if all files inside and subfolders have been deleted.'), t('dokuwiki', 'Delete folder'));
+								    }
+					                    });
+					             
+				             }
+			                    );
 			FileActions.register('all', 'Rename',
-				OC.PERMISSION_UPDATE,
-				function () { 
-					return OC.imagePath('core', 'actions/rename');
-				},
-				
-				function (filename) {
-					Wiki.rename(filename);
-				}
-			);
+				             OC.PERMISSION_UPDATE,
+				             function () { 
+					             return OC.imagePath('core', 'actions/rename');
+				             },
+				             
+				             function (filename) {
+					             Wiki.rename(filename);
+				             }
+			                    );
 		}
-	}
-	// overwrite Files.isFileNameValid
-	$(window).load(function(){
-		if($('#dir').length != 0 && $('#dir').val().substr(0, 5) == '/'+Wiki.wiki){
+
+	        // overwrite Files.isFileNameValid
+                //	$(window).load(function(){
+                if (toWiki) {
                         Wiki.oldFileNameValid = Files.isFileNameValid;
 		        Files.isFileNameValid = function(name){return Wiki.isFileNameValid(name)};
 
                         Wiki.oldCheckName = FileList.checkName;
 		        FileList.checkName = function(oldName, newName, isNewFile){return Wiki.checkName(oldName, newName, isNewFile)};
+                } else {
+                        File.isFileNameValid = Wiki.oldFileNameValid;
+                        File.checkName       = Wiki.oldCheckName;
                 }
 		$('#notification:first-child').on('click', '.cancel', function() {
 			FileList.do_delete($('#notification > span').attr('data-oldName'));
 		});	
-		// Remove delete-action for wiki folder.
+		          // Remove delete-action for wiki folder.
 		if($('#dir').val() == '/'){
 			$wiki = $("tr[data-file='"+Wiki.wiki+"']");
 			$wiki.find('td.date').find('a.delete').remove();
@@ -1140,7 +1161,9 @@ $(document).ready(function(){
 			$actions.find("a[data-action='Rename']").remove();
 			$actions.find("a[data-action='Share']").remove();
 		}
-	});
+
+        }); // on changeDirectory
+
 });
 
 
@@ -1169,12 +1192,6 @@ $(this).click(
 	}
 );
 
-
-
-
-
-
-
-
-
-
+// Local Variables: ***
+// js-indent-level: 8 ***
+// End: ***
