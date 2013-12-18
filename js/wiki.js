@@ -923,42 +923,13 @@ Wiki = {
                 // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
                 return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').
                         replace(/\)/g, '%29').replace(/\*/g, '%2A').replace(/%20/g, '+');
-        }
-}
-// Set configvalues
-/*OC.AppConfig.getCall('getValue',{app:'dokuwiki',key:'dokuwikibase',defaultValue:'wiki'},function(q){Wiki.dokuwikibase = q;});
-OC.AppConfig.getCall('getValue',{app:'dokuwiki',key:'dokuwikiurl',defaultValue:'wiki'},function(q){Wiki.dokuwikiurl = q;});
-OC.AppConfig.getCall('getValue',{app:'dokuwiki',key:'dokuwikideaccent',defaultValue:'wiki'},function(q){Wiki.dokuwikideaccent = q;});
-OC.AppConfig.getCall('getValue',{app:'dokuwiki',key:'dokuwikisepchar',defaultValue:'wiki'},function(q){Wiki.dokuwikisepchar = q;});*/
-Wiki.getAppConfig();
-
-function bind(fnc/*, ... */) {
-    var Aps = Array.prototype.slice,
-    // Store passed arguments in this scope.
-    // Since arguments is no Array nor has an own slice method,
-    // we have to apply the slice method from the Array.prototype
-        static_args = Aps.call(arguments, 1);
-
-    // Return a function evaluating the passed function with the
-    // given args and optional arguments passed on invocation.
-    return function (/* ... */) {
-        // Same here, but we use Array.prototype.slice solely for
-        // converting arguments to an Array.
-        return fnc.apply(this,
-                         static_args.concat(Aps.call(arguments, 0)));
-    };
-}
-
-
-$(document).ready(function(){
-	// Overwrite getUniqueName from apps/files/js/files.js (line 1061-1084) to sanitize filename for new files and folders
-	getUniqueName = function(newname){
-			return Wiki.getUniqueName(Wiki.sanitizeFilename(newname));
-	}
-	
-        $('#fileList').on('changeDirectory', function (evt) {
-                var targetDir  = evt.dir;
-                var currentDir = evt.previousDir;
+        },
+        // Tweak the file-actions menu depending on the actual and
+        // previous location. This is more complicated since OC6
+        // because the page is no longer reloaded on directory change,
+        // but instead updated via Ajax technology. This function
+        // plugs into the onChangeDirectory event emitted by the files-app.
+        tweakFileActions: function(targetDir, currentDir) {
                 var toWiki     = targetDir.substr(0, 5) == '/'+Wiki.wiki;
                 var fromWiki   = currentDir.substr(0, 5) == '/'+Wiki.wiki;
 
@@ -1162,11 +1133,50 @@ $(document).ready(function(){
 			$actions.find("a[data-action='Share']").remove();
 		}
 
-        }); // on changeDirectory
+        },
+}
+
+// Set configvalues
+Wiki.getAppConfig();
+
+function bind(fnc/*, ... */) {
+    var Aps = Array.prototype.slice,
+    // Store passed arguments in this scope.
+    // Since arguments is no Array nor has an own slice method,
+    // we have to apply the slice method from the Array.prototype
+        static_args = Aps.call(arguments, 1);
+
+    // Return a function evaluating the passed function with the
+    // given args and optional arguments passed on invocation.
+    return function (/* ... */) {
+        // Same here, but we use Array.prototype.slice solely for
+        // converting arguments to an Array.
+        return fnc.apply(this,
+                         static_args.concat(Aps.call(arguments, 0)));
+    };
+}
+
+
+$(document).ready(function(){
+	// Overwrite getUniqueName from apps/files/js/files.js (line 1061-1084) to sanitize filename for new files and folders
+	getUniqueName = function(newname){
+			return Wiki.getUniqueName(Wiki.sanitizeFilename(newname));
+	}
+
+	// Hook into the changeDirectory event emitted by the files-app
+        $('#fileList').on('changeDirectory', function (evt) {
+                return Wiki.tweakFileActions(evt.dir, evt.previousDir);
+        });
+
+        // When targetting the file-space by a direct link, there is
+        // no changeDirectory event, hence we _also_ have to hook in
+        // to the document-ready stuff directly. In this case we leave
+        // the current directory empty.
+        if (typeof FileActions !== 'undefined' && $('#dir').length > 0) {
+                Wiki.tweakFileActions($('#dir').val(), '');
+        }
 
 });
-
-
 
 $(this).click(
 	function(event) {
