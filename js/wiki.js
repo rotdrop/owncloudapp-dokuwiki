@@ -40,8 +40,8 @@ Wiki = {
 	img: true,
 	filenamecache: {},
 	cleanfilenames: {},
-	oldFileNameValid: function (name) { return false; },
-        oldCheckName: function (modName, newName, isNewFile) { return false },
+	oldFileNameValid: false,
+        oldCheckName: false,
         oldFileActions: false,
 
 	// we call the old control function from Files and then add additional test.
@@ -1111,13 +1111,13 @@ Wiki = {
 
 	        // overwrite Files.isFileNameValid
                 //	$(window).load(function(){
-                if (toWiki) {
+                if (toWiki && Wiki.oldFilenameValid === false) {
                         Wiki.oldFileNameValid = Files.isFileNameValid;
 		        Files.isFileNameValid = function(name){return Wiki.isFileNameValid(name)};
 
                         Wiki.oldCheckName = FileList.checkName;
 		        FileList.checkName = function(oldName, newName, isNewFile){return Wiki.checkName(oldName, newName, isNewFile)};
-                } else {
+                } else if (fromWiki && Wiki.oldFilenameValid !== false) {
                         File.isFileNameValid = Wiki.oldFileNameValid;
                         File.checkName       = Wiki.oldCheckName;
                 }
