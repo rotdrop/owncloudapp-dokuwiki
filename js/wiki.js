@@ -246,7 +246,7 @@ Wiki = {
 		}
 		html += '</div>';
 		html += '<div id="private" style="margin-bottom: 5px;">';
-		html += '<button name="makelink" id="linkconfig"> <img src="'+OC.imagePath('core','filetypes/model.png')+'" style="vertical-align:middle"> '+t('dokuwiki', 'Create wikilink')+'</button>';
+		html += '<button name="makelink" id="linkconfig"> <img src="'+OC.imagePath('core','actions/add')+'" style="vertical-align:middle"> '+t('dokuwiki', 'Create wikilink')+'</button>';
 		//html += '<input type="button" value="Linkbauen" name="makelink" id="linkconfig"  />';
 		if(!isDir){
 			html += '<button name="versions" id="versions"> <img src="'+OC.imagePath('core','actions/clock')+'" style="vertical-align:middle"> '+t('dokuwiki', 'Versions')+'</button>';
@@ -936,21 +936,22 @@ Wiki = {
                 if (fromWiki == toWiki) {
                         return;
                 }
-	
+
                 if (toWiki && !Wiki.oldFileActions) {
                         Wiki.oldFileActions = {};
-                        $.extend(true, Wiki.oldFileActions, FileActions.actions);
+                        $.extend(true, Wiki.oldFileActions, OCA.Files.App.fileList.fileActions.actions);
                 } else if (fromWiki && Wiki.oldFileActions) {
-                        FileActions.actions = Wiki.oldFileActions;
+                        OCA.Files.App.fileList.fileActions.actions = Wiki.oldFileActions;
                         Wiki.oldFileActions = false;
                 }
 
                 if (toWiki) {
 
 		        // Remove versions button from 'files/index.php' inside the wiki-folder.
-                        FileActions.actions['file'][t('files_versions', 'Versions')] = false;
+                        delete OCA.Files.App.fileList.fileActions.actions['file']['Versions'];
+                        //window.FileActions.actions['file']['Versions'] = false;
                         //FileActions.icons[t('files_versions', 'Versions')] = null;
-			FileActions.register(
+                        OCA.Files.App.fileList.fileActions.register(
 				'file'
 				, t('dokuwiki', 'Description')
 				, OC.PERMISSION_READ
@@ -978,7 +979,7 @@ Wiki = {
 					}	
 				}
 			);
-			FileActions.register(
+			OCA.Files.App.fileList.fileActions.register(
 				'file'
 				, t('dokuwiki', 'Wiki')
 				, OC.PERMISSION_READ
@@ -1009,7 +1010,7 @@ Wiki = {
 					
 				}
 			);
-			FileActions.register(
+			OCA.Files.App.fileList.fileActions.register(
 				'dir'
 				, t('dokuwiki', 'Wiki')
 				, OC.PERMISSION_READ
@@ -1038,7 +1039,7 @@ Wiki = {
 				}
 			);
 			// Overwrite Delete-action from files-app
-			FileActions.register('file', 'Delete',
+			OCA.Files.App.fileList.fileActions.register('file', 'Delete',
 				             OC.PERMISSION_DELETE,
 				             function () {
 					             return OC.imagePath('core', 'actions/delete');
@@ -1072,7 +1073,7 @@ Wiki = {
 					             }
 				             }
 			                    );
-			FileActions.register('dir', 'Delete',
+			OCA.Files.App.fileList.fileActions.register('dir', 'Delete',
 				             OC.PERMISSION_DELETE,
 				             function () {
 					             return OC.imagePath('core', 'actions/delete');
@@ -1097,7 +1098,7 @@ Wiki = {
 					             
 				             }
 			                    );
-			FileActions.register('all', 'Rename',
+			OCA.Files.App.fileList.fileActions.register('all', 'Rename',
 				             OC.PERMISSION_UPDATE,
 				             function () { 
 					             return OC.imagePath('core', 'actions/rename');
@@ -1163,10 +1164,16 @@ $(document).ready(function(){
 			return Wiki.getUniqueName(Wiki.sanitizeFilename(newname));
 	}
 
+        if (false) {
 	// Hook into the changeDirectory event emitted by the files-app
         $('#fileList').on('changeDirectory', function (evt) {
                 return Wiki.tweakFileActions(evt.dir, evt.previousDir);
         });
+        } else {
+		$('#app-content').delegate('>div', 'changeDirectory', function (evt) {
+                        return Wiki.tweakFileActions(evt.dir, evt.previousDir);
+                });
+        }
 
         // When targetting the file-space by a direct link, there is
         // no changeDirectory event, hence we _also_ have to hook in
