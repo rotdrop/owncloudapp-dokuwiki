@@ -1,5 +1,5 @@
 <form id="dokuwiki" action="#" method="post">
-	<fieldset class="personalblock">
+	<fieldset class="section">
 		<legend><strong><?php p($l->t('DokuWiki app configuration'));?></strong></legend>
 		<!--<p>
 			<label for="wikidirname"><?php p($l->t('Foldername (External Storage) for DokuWiki files').':');?></label>
