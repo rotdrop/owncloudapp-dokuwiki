@@ -8,28 +8,6 @@
  <charset>utf8</charset>
 
  <table>
-  <name>*dbprefix*files_versions</name>
-  <declaration>
-   <field>
-		<name>user</name>
-		<type>text</type>
-		<default></default>
-		<notnull>true</notnull>
-		<length>64</length>
-	   </field>
-	   <field>
-		<name>size</name>
-		<type>text</type>
-		<default></default>
-		<notnull>true</notnull>
-		<length>50</length>
-	   </field>
-  
-   
- </declaration>
- </table>
- 
- <table>
   <name>*dbprefix*dokuwiki_media_use</name>
   <declaration>
 	   <field>
