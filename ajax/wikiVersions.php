@@ -58,7 +58,7 @@ if(!isset($_GET['file'])){
 			$lines = count($meta);
 			if($lines <= 1){
 				OCP\JSON::error(array("data" => array( "message" => "No versions")));
-				return '';
+				return false;
 			}
 			$meta =  array_reverse($meta);
 			$ret = '<ul>';
@@ -79,33 +79,39 @@ if(!isset($_GET['file'])){
 			}
 			$ret .= '</ul>';
 			OCP\JSON::success(array("data" => array( "message" => $ret)));
+                        return true;
 		}else{
 			OCP\JSON::error(array("data" => array( "message" => "No metainfos found")));
+                        return false;
 		}
 	}
 }
 
+/*
 // If DB used
-/*if(!isset($_GET['id'])){
+if(!isset($_GET['id'])){
 	OCP\JSON::error(array("data" => array( "message" => "No FileID given." )));
 }else{
 	$url = OC_Appconfig::getValue('dokuwiki', 'dokuwikiurl', 'http://localhost/wax');
 	$fetch = "$url/lib/exe/fetch.php";
 	$query = \OC_DB::prepare('SELECT `timestamp`, `user`, `ip`, `desc`, `mod` FROM `*PREFIX*dokuwiki_media_meta` WHERE fileid=? ORDER BY `timestamp` DESC');
 	$query->execute(array(intval($_GET['id'])));
-	$rows = $query->numRows();
-	if($rows <= 1)OCP\JSON::error(array("data" => array( "message" => "No versions"))); 
-	else{
-		$row = $query->fetchRow();// Skip current Version
-		$ret = '<ul>';
-		for($i = 2; $i <= $rows; $i++){
-			$row = $query->fetchRow();
-			$date = strftime('%Y/%m/%d %H:%M',$row['timestamp']);
-			if(empty($row['user'])) $row['user'] = $row['ip'];
-			if($row['mod'] != 'm') $ret .= '<li><a title="'.$row['desc'].'" href="'.$fetch.'?media='.$_GET['file'].'&rev='.$row['timestamp'].'" target="_blank"><b>'.htmlspecialchars($date).'</b>'.htmlspecialchars(' ('.$row['user'].')').'</a></li>';
-		}
-		$ret .= '</ul>';
-		OCP\JSON::success(array("data" => array( "message" => $ret)));
-	}
-}*/
+        $row = $query->fetchRow();// Skip current Version
+        $ret = '<ul>';
+        $row = $query->fetchRow();
+        if (!$row) {
+                OCP\JSON::error(array("data" => array( "message" => "No versions")));
+                exit();
+        }
+        while ($row) {
+                $date = strftime('%Y/%m/%d %H:%M',$row['timestamp']);
+                if(empty($row['user'])) $row['user'] = $row['ip'];
+                if($row['mod'] != 'm') $ret .= '<li><a title="'.$row['desc'].'" href="'.$fetch.'?media='.$_GET['file'].'&rev='.$row['timestamp'].'" target="_blank"><b>'.htmlspecialchars($date).'</b>'.htmlspecialchars(' ('.$row['user'].')').'</a></li>';
+                $row = $query->fetchRow();
+        }
+        $ret .= '</ul>';
+        OCP\JSON::success(array("data" => array( "message" => $ret)));
+        exit();
+}
+*/
 ?>
