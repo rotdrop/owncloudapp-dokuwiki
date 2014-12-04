@@ -1,10 +1,10 @@
-<?xml version="1.0"?>
+<?xml version="1.1"?>
 <info>
 	<id>dokuwiki</id>
 	<name>DokuWiki</name>
 	<licence>AGPL</licence>
 	<author>Martin Schulte</author>
-	<require>5.0.1</require>
+	<require>7.0.0</require>
 	<shipped>false</shipped>
 	<description>
 	With this app you can use ownCloud as file-backend for DokuWiki. 
