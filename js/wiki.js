@@ -1164,25 +1164,13 @@ $(document).ready(function(){
 			return Wiki.getUniqueName(Wiki.sanitizeFilename(newname));
 	}
 
-        if (false) {
-	// Hook into the changeDirectory event emitted by the files-app
-        $('#fileList').on('changeDirectory', function (evt) {
-                return Wiki.tweakFileActions(evt.dir, evt.previousDir);
+	$('#app-content').delegate('>div', 'changeDirectory', function (evt) {
+                 return Wiki.tweakFileActions(evt.dir, evt.previousDir);
         });
-        } else {
-		$('#app-content').delegate('>div', 'changeDirectory', function (evt) {
-                        return Wiki.tweakFileActions(evt.dir, evt.previousDir);
-                });
-        }
 
-        // When targetting the file-space by a direct link, there is
-        // no changeDirectory event, hence we _also_ have to hook in
-        // to the document-ready stuff directly. In this case we leave
-        // the current directory empty.
-        if (typeof FileActions !== 'undefined' && $('#dir').length > 0) {
-                Wiki.tweakFileActions($('#dir').val(), '');
-        }
-
+	$('#app-content').delegate('>div', 'urlChanged', function (evt) {
+                 return Wiki.tweakFileActions(evt.dir, '');
+        });
 });
 
 $(this).click(
